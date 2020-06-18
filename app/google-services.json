@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "703230185733",
+    "firebase_url": "https://webrtc-251af.firebaseio.com",
+    "project_id": "webrtc-251af",
+    "storage_bucket": "webrtc-251af.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:703230185733:android:c0b54b978fa4fd103e676c",
+        "android_client_info": {
+          "package_name": "com.example.webrtcandroid"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "703230185733-okinek748tuig23gpr5k59bg8bspjnd4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCfuINPZ4cqgv4yhDAYvpIx-gQst4bol1I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "703230185733-okinek748tuig23gpr5k59bg8bspjnd4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
