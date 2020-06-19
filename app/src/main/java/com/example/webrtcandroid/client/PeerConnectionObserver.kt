@@ -1,4 +1,4 @@
-package com.example.webrtcandroid
+package com.example.webrtcandroid.client
 
 import android.util.Log
 import org.webrtc.*

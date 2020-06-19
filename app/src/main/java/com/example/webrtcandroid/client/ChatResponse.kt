@@ -1,6 +1,4 @@
-package com.example.webrtcandroid
-
-import org.webrtc.DataChannel
+package com.example.webrtcandroid.client
 
 interface ChatResponse {
 
