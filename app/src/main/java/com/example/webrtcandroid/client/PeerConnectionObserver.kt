@@ -5,7 +5,7 @@ import org.webrtc.*
 
 open class PeerConnectionObserver : PeerConnection.Observer{
     override fun onIceCandidate(p0: IceCandidate?) {
-        Log.d("PeerConnectionObserver", "onIceCandidate : $p0")
+        Log.d("PeerConnectionObserver", "onIceCandidate : ${p0.toString()}")
     }
 
     override fun onDataChannel(p0: DataChannel?) {

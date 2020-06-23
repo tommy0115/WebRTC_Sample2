@@ -28,54 +28,66 @@ class RTCClient(context: Context) {
             add("stun:stun2.l.google.com:19302")
             add("stun:stun3.l.google.com:19302")
             add("stun:stun4.l.google.com:19302")
+            add("stun:numb.viagenie.ca:3478")
         }).createIceServer()
     )
 
-    private var signalingType : SignalingType = SignalingType.NONE
+    private var signalingType: SignalingType = SignalingType.NONE
 
     private val peerConnectionFactory by lazy { buildPeerConnectionFactory() }
     private val peerConnection by lazy {
         buildPeerConnection(object : PeerConnectionObserver() {
-                override fun onIceCandidate(p0: IceCandidate?) {
-                    super.onIceCandidate(p0)
-                    sendIceCandidate(p0)
+            var iceCandidate : String = ""
+            override fun onIceCandidate(p0: IceCandidate?) {
+                super.onIceCandidate(p0)
 
-                    val signalingResponse = object : SignalingResponse{
-                        override fun onReceive(type: SignalingType, desc: String) {
-                            addIceCandidate(Gson().fromJson(desc, IceCandidate::class.java))
-                        }
+                iceCandidate += Gson().toJson(p0!!)
 
-                        override fun onError(type: SignalingType, desc: String) {
-                            Log.e("iceCandidate","$desc")
-                        }
-
+                val signalingResponse = object : SignalingResponse {
+                    override fun onReceive(type: SignalingType, desc: String) {
+                        addIceCandidate(Gson().fromJson(desc, IceCandidate::class.java))
                     }
 
-                    if (signalingType == SignalingType.ANSWER){
-                        signaling.waitIceCandidate(SignalingType.OFFER, signalingResponse)
-                    } else {
-                        signaling.waitIceCandidate(SignalingType.ANSWER, signalingResponse)
+                    override fun onError(type: SignalingType, desc: String) {
+                        Log.e("iceCandidate", "$desc")
                     }
 
+                    //"{\"sdp\":\"candidate:842163049 1 udp 1685921535 39.7.230.82 47673 typ srflx raddr 192.0.0.2 rport 47673 generation 0 ufrag 2r/7 network-id 4 network-cost 900\",\"sdpMLineIndex\":0,\"sdpMid\":\"data\",\"serverUrl\":\"stun:74.125.23.127:19302\"}"
+
                 }
 
-                override fun onAddStream(p0: MediaStream?) {
-                    super.onAddStream(p0)
+                if (signalingType == SignalingType.ANSWER) {
+                    signaling.waitIceCandidate(SignalingType.OFFER, signalingResponse)
+                } else {
+                    signaling.waitIceCandidate(SignalingType.ANSWER, signalingResponse)
                 }
 
-                override fun onDataChannel(p0: DataChannel?) {
-                    super.onDataChannel(p0)
-                    dataChannel = p0
-                }
+            }
 
-                override fun onIceConnectionChange(p0: PeerConnection.IceConnectionState?) {
-                    super.onIceConnectionChange(p0)
-                    if (p0?.name?.toLowerCase() === "connected") {
-                        // Peers connected!
-                        Log.d("onIceConnectionChange", "connected")
-                    }
-                    //rtcClient.sendMessage("Connected")
+            override fun onIceGatheringChange(p0: PeerConnection.IceGatheringState?) {
+                super.onIceGatheringChange(p0)
+
+                if (p0 == PeerConnection.IceGatheringState.COMPLETE){
+
+                    //sendIceCandidate(p0)
                 }
+            }
+
+            override fun onAddStream(p0: MediaStream?) {
+                super.onAddStream(p0)
+            }
+
+            override fun onDataChannel(p0: DataChannel?) {
+                super.onDataChannel(p0)
+                dataChannel = p0
+            }
+
+            override fun onIceConnectionChange(p0: PeerConnection.IceConnectionState?) {
+                super.onIceConnectionChange(p0)
+                if (p0 == PeerConnection.IceGatheringState.COMPLETE){
+
+                }
+            }
         })
     }
     private var dataChannel: DataChannel? = null
