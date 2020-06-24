@@ -3,11 +3,7 @@ package com.example.webrtcandroid.client
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
-import com.example.webrtcandroid.signaling.AppSdpObserver
-import com.example.webrtcandroid.signaling.FirebaseRealTimeDbSignaling
-import com.example.webrtcandroid.signaling.Signaling
-import com.example.webrtcandroid.signaling.SignalingResponse
-import com.example.webrtcandroid.signaling.SignalingType
+import com.example.webrtcandroid.signaling.*
 import com.google.gson.Gson
 import org.webrtc.*
 import java.nio.ByteBuffer
@@ -45,7 +41,43 @@ class RTCClient(context: Context) {
 
                 val signalingResponse = object : SignalingResponse {
                     override fun onReceive(type: SignalingType, desc: String) {
-                        addIceCandidate(Gson().fromJson(desc, IceCandidate::class.java))
+
+                        val conv = desc.replace("\"", "")
+
+                        //val reg = Regex(pattern = """[{].*?[}]""")
+                        val reg = Regex(pattern = "[{].*?[}]")
+
+                        val matchedResults = reg.findAll(conv)
+
+                        val result = mutableListOf<IceData>()
+                        for (matchedText in matchedResults) {
+                            val base = matchedText.value.replace("{", "").replace("}", "")
+                            val iceData = IceData()
+                            base.split(",").forEachIndexed { index, s ->
+                                val data = s.replaceBefore(":", "").drop(1)
+
+                                when (index) {
+                                    0 -> {
+                                        iceData.sdp = data
+                                    }
+                                    1 -> {
+                                        iceData.sdpMLineIndex = data
+                                    }
+                                    2 -> {
+                                        iceData.sdpMid = data
+                                    }
+                                    3 -> {
+                                        iceData.serverUrl = data
+                                    }
+                                }
+                            }
+                            result.add(iceData)
+                        }
+
+                        result.forEach {
+                            addIceCandidate(it.toIceCandidate())
+                        }
+
                     }
 
                     override fun onError(type: SignalingType, desc: String) {
@@ -68,13 +100,13 @@ class RTCClient(context: Context) {
                 super.onIceGatheringChange(p0)
 
                 if (p0 == PeerConnection.IceGatheringState.COMPLETE){
-
-                    //sendIceCandidate(p0)
+                    sendIceCandidate(iceCandidate)
                 }
             }
 
             override fun onAddStream(p0: MediaStream?) {
                 super.onAddStream(p0)
+
             }
 
             override fun onDataChannel(p0: DataChannel?) {
@@ -117,7 +149,7 @@ class RTCClient(context: Context) {
             .createPeerConnectionFactory()
     }
 
-    fun addIceCandidate(iceCandidate: IceCandidate?) {
+    fun addIceCandidate(iceCandidate: IceCandidate) {
         peerConnection?.addIceCandidate(iceCandidate)
     }
 
@@ -198,7 +230,7 @@ class RTCClient(context: Context) {
         return String(bytes, charset)
     }
 
-    fun sendIceCandidate(p0: IceCandidate?) {
+    fun sendIceCandidate(p0: String) {
         signaling.sendIceCandidate(signalingType, p0)
     }
 

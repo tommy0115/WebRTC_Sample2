@@ -21,8 +21,8 @@ class FirebaseRealTimeDbSignaling : Signaling {
         ref.child("answer").setValue(desc)
     }
 
-    override fun sendIceCandidate(type: SignalingType, p0: IceCandidate?) {
-        ref.child("${type.getOperationName()}_IceCandidate").setValue(Gson().toJson(p0!!))
+    override fun sendIceCandidate(type: SignalingType, p0: String) {
+        ref.child("${type.getOperationName()}_IceCandidate").setValue(p0)
     }
 
     override fun waitIceCandidate(type: SignalingType, signalingResponse: SignalingResponse){
