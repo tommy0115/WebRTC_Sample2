@@ -2,20 +2,28 @@ package com.example.webrtcandroid.client
 
 import android.content.Context
 import android.util.Log
-import android.widget.Toast
 import com.example.webrtcandroid.signaling.*
 import com.google.gson.Gson
 import org.webrtc.*
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 
-class RTCClient(context: Context) {
+class RTCClient(val context: Context, val localView : SurfaceViewRenderer,  val remoteView : SurfaceViewRenderer) {
 
     init {
         initializePeerConnectionFactory(context)
     }
 
+    companion object {
+        private const val LOCAL_TRACK_ID = "local_track"
+        private const val LOCAL_STREAM_ID = "local_track"
+    }
+
     private val eglBase: EglBase by lazy { EglBase.create() }
+    private val videoCapturer by lazy { getVideoCapturer(context) }
+
+    private var videoTrack: VideoTrack? = null
+    private var audioTrack: AudioTrack? = null
 
     private val iceServer = listOf(
         PeerConnection.IceServer.builder(mutableListOf<String>().apply {
@@ -106,7 +114,7 @@ class RTCClient(context: Context) {
 
             override fun onAddStream(p0: MediaStream?) {
                 super.onAddStream(p0)
-
+                p0?.videoTracks?.get(0)?.addSink(remoteView)
             }
 
             override fun onDataChannel(p0: DataChannel?) {
@@ -132,20 +140,41 @@ class RTCClient(context: Context) {
         PeerConnectionFactory.initialize(options)
     }
 
+    fun initSurfaceView(view: SurfaceViewRenderer) = view.run {
+        setMirror(true)
+        setEnableHardwareScaler(true)
+        init(eglBase.eglBaseContext, null)
+    }
+
     private fun buildPeerConnection(observer: PeerConnection.Observer) =
         peerConnectionFactory.createPeerConnection(
             iceServer,
             observer
-        )
+        )?.apply {
+
+            initSurfaceView(localView)
+            initSurfaceView(remoteView)
+
+            val localVideoSource: VideoSource = peerConnectionFactory.createVideoSource(false)
+            val surfaceTextureHelper = SurfaceTextureHelper.create(Thread.currentThread().name, eglBase.eglBaseContext)
+            (videoCapturer as VideoCapturer).initialize(surfaceTextureHelper, context, localVideoSource.capturerObserver)
+            videoCapturer.startCapture(640, 240, 30)
+            val localVideoTrack = peerConnectionFactory.createVideoTrack(LOCAL_TRACK_ID, localVideoSource)
+            localVideoTrack.addSink(localView)
+            val localStream = peerConnectionFactory.createLocalMediaStream(LOCAL_STREAM_ID)
+            localStream.addTrack(localVideoTrack)
+            addStream(localStream)
+        }
+
 
     private fun buildPeerConnectionFactory(): PeerConnectionFactory {
         return PeerConnectionFactory.builder().setOptions(PeerConnectionFactory.Options())
-            /*.setVideoEncoderFactory(
+            .setVideoEncoderFactory(
                 DefaultVideoEncoderFactory(
                     eglBase.eglBaseContext, true, true
                 )
             )
-            .setVideoDecoderFactory(DefaultVideoDecoderFactory(eglBase.eglBaseContext))*/
+            .setVideoDecoderFactory(DefaultVideoDecoderFactory(eglBase.eglBaseContext))
             .createPeerConnectionFactory()
     }
 
@@ -321,6 +350,15 @@ class RTCClient(context: Context) {
         dataChannel?.close()
         signaling.close()
     }
+
+    private fun getVideoCapturer(context: Context) =
+        Camera2Enumerator(context).run {
+            deviceNames.find {
+                isFrontFacing(it)
+            }?.let {
+                createCapturer(it, null)
+            } ?: throw IllegalStateException()
+        }
 
 
 }

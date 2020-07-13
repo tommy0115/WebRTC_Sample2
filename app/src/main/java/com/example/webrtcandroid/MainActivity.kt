@@ -1,6 +1,7 @@
 package com.example.webrtcandroid
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.KeyEvent
@@ -34,6 +35,8 @@ class MainActivity : AppCompatActivity() {
             .createIceServer()
     )
 
+
+
     lateinit var rtcClient : RTCClient
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,7 +51,7 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_main2)
 
-        rtcClient = RTCClient(this)
+        rtcClient = RTCClient(this, local_view, remote_view)
 
 
         rtcClient.createDataChannel("Chat", object :
@@ -59,6 +62,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         })
+
 
 
         textMessage.setOnEditorActionListener(object : TextView.OnEditorActionListener {
@@ -77,6 +81,7 @@ class MainActivity : AppCompatActivity() {
         });
 
 
+
         waiting.setOnClickListener {
             rtcClient.offer(object : AppSdpObserver(){
 
@@ -92,6 +97,7 @@ class MainActivity : AppCompatActivity() {
                 getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
             startActivityForResult(projectionManager.createScreenCaptureIntent(), REQUEST_CODE)*/
         }
+
 
     }
 
@@ -109,5 +115,7 @@ class MainActivity : AppCompatActivity() {
 
         super.onActivityResult(requestCode, resultCode, data)
     }
+
+
 
 }
